@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: trips-depoloyment  
+  namespace: api
+  labels:
+     app: trips
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: trips-pod
+  template:
+    metadata:
+      labels:
+        app: trips-pod
+    spec:
+      containers:
+      - name: trips
+        image: registrybba6359.azurecr.io/trips:latest
+        env:
+          - name: SQL_USER
+            valueFrom:
+              secretKeyRef:
+                  name: sqlusername
+                  key: key
+          - name: SQL_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                  name: sqlpassword
+                  key: key
+          - name: SQL_SERVER
+            value: "sqlserverbba6359.database.windows.net"
+          - name: SQL_DBNAME
+            value: "mydrivingDB"
+        volumeMounts:
+          - name: secrets-store-inline
+            mountPath: "/mnt/secrets-store"
+            readOnly: true
+      volumes:
+        - name: secrets-store-inline
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: "kv1-dw-hack"
+
+---          
+          
+apiVersion: v1
+kind: Service
+metadata:
+  name: trips-service
+  namespace: api
+  labels:
+     app: trips
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 80
+      protocol: TCP
+      name: http
+  selector:
+    app: trips-pod
+
+---
+

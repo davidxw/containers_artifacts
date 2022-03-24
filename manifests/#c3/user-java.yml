@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-java-depoloyment  
+  labels:
+     app: user-java
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: user-java-pod
+  template:
+    metadata:
+      labels:
+        app: user-java-pod
+    spec:
+      containers:
+      - name: user-java
+        image: registrybba6359.azurecr.io/user-java:latest
+        env:
+          - name: SQL_USER
+            valueFrom:
+              secretKeyRef:
+                  name: db-secret
+                  key: username
+          - name: SQL_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                  name: db-secret
+                  key: password
+          - name: SQL_SERVER
+            value: "sqlserverbba6359.database.windows.net"
+          - name: SQL_DBNAME
+            value: "mydrivingDB"
+
+---          
+          
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-java-service
+  labels:
+     app: user-java
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 80
+      protocol: TCP
+      name: http
+  selector:
+    app: user-java-pod
+
+---
+

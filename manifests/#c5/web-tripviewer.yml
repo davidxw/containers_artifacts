@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tripviewer-depoloyment  
+  namespace: web
+  labels:
+     app: tripviewer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tripviewer-pod
+  template:
+    metadata:
+      labels:
+        app: tripviewer-pod
+    spec:
+      containers:
+      - name: tripviewer
+        image: registrybba6359.azurecr.io/tripviewer:latest
+        env:
+          - name: TRIPS_API_ENDPOINT
+            value: "http://trips-service.api.svc.cluster.local"
+          - name: USERPROFILE_API_ENDPOINT
+            value: "http://userprofile-service.api.svc.cluster.local"
+          - name: ASPNETCORE_ENVIRONMENT 
+            value: "Development"
+
+---          
+          
+apiVersion: v1
+kind: Service
+metadata:
+  name: tripviewer-service
+  namespace: web
+  labels:
+     app: tripviewer
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 80
+      protocol: TCP
+      name: http
+  selector:
+    app: tripviewer-pod
+
+---
+

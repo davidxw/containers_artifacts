@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: poi-depoloyment  
+  namespace: api
+  labels:
+     app: poi
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: poi-pod
+  template:
+    metadata:
+      labels:
+        app: poi-pod
+    spec:
+      containers:
+      - name: poi
+        image: registrybba6359.azurecr.io/poi:latest
+        env:
+          - name: ASPNETCORE_ENVIRONMENT
+            value: "Development"
+          - name: CONFIG_FILES_PATH
+            value: "/secrets"
+          - name: SQL_USER
+            valueFrom:
+              secretKeyRef:
+                  name: sqlusername
+                  key: key
+          - name: SQL_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                  name: sqlpassword
+                  key: key
+          - name: SQL_SERVER
+            value: "sqlserverbba6359.database.windows.net"
+          - name: SQL_DBNAME
+            value: "mydrivingDB"
+        volumeMounts:
+          - name: secrets-store-inline
+            mountPath: "/mnt/secrets-store"
+            readOnly: true
+      volumes:
+        - name: secrets-store-inline
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: "kv1-dw-hack"            
+
+---          
+          
+apiVersion: v1
+kind: Service
+metadata:
+  name: poi-service
+  namespace: api
+  labels:
+     app: poi
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 80
+      protocol: TCP
+      name: http
+  selector:
+    app: poi-pod
+
+---
+

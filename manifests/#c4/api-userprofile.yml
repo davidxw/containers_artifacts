@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: userprofile-depoloyment  
+  namespace: api
+  labels:
+     app: userprofile
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: userprofile-pod
+  template:
+    metadata:
+      labels:
+        app: userprofile-pod
+    spec:
+      containers:
+      - name: userprofile
+        image: registrybba6359.azurecr.io/userprofile:latest
+        env:
+          - name: SQL_USER
+            valueFrom:
+              secretKeyRef:
+                  name: db-secret
+                  key: username
+          - name: SQL_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                  name: db-secret
+                  key: password
+          - name: SQL_SERVER
+            value: "sqlserverbba6359.database.windows.net"
+          - name: SQL_DBNAME
+            value: "mydrivingDB"
+
+---          
+          
+apiVersion: v1
+kind: Service
+metadata:
+  name: userprofile-service
+  namespace: api
+  labels:
+     app: userprofile
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 80
+      protocol: TCP
+      name: http
+  selector:
+    app: userprofile-pod
+
+---
+
